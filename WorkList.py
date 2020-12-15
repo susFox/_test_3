@@ -39,7 +39,7 @@ class Singleton(type):  # Type을 상속받음
 try:
     from watchdog.observers import Observer
 
-    from watchdog.events import FileSystemEventHandler
+    from watchdog.events import FileSystemEventHandlerㄷ
 
 except ModuleNotFoundError as e:
     print(e)
