@@ -19,7 +19,6 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-# import DB
 import MainUI
 import SubUI
 from WorkList_db import WorkList_db_class
@@ -75,6 +74,9 @@ class Handler(FileSystemEventHandler):
             if Extension == '.txt':
                 if temp == -1:
                     Watcher.temp = 1
+                    import shutil
+                    shutil.copy(event.src_path, "C:\\Barcode\\")
+                    
 
             elif Extension == '.exe': #############
 
@@ -163,7 +165,9 @@ if __name__ == "__main__":
     DB = WorkList_db_class()
     temp = 0
 
-    os.startfile(r"C:\Users\USER\Desktop\업무\PerkinElmer\SYM-BIO\PreNAT II\PreNATII.exe") ########################## 경로 수정
+    PE_path = DB.show_PE_path()
+    PE_path = PE_path[0][0]
+    os.startfile(PE_path)
     import psutil  # 실행중인 프로세스 및 시스템 활용 라이브러리
     
     for proc in psutil.process_iter():
