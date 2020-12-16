@@ -32,11 +32,13 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
+        print("test 중입니다.4ㄷㄷㅇㄷ")
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
+
 try:
     from watchdog.observers import Observer
 
-    from watchdog.events import FileSystemEventHandler
+    from watchdog.events import FileSystemEventHandlerㄷ
 
 except ModuleNotFoundError as e:
     print(e)
