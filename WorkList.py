@@ -19,10 +19,6 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-# import DB
-import Monitering.MainUI
-import Monitering.SubUI
-from Monitering.WorkList_db import WorkList_db_class
 
 
 class Singleton(type):  # Type을 상속받음
@@ -34,13 +30,14 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
+
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
 
 
 try:
     from watchdog.observers import Observer
 
-    from watchdog.events import FileSystemEventHandler
+    from watchdog.events import FileSystemEventHandlerㄷ
 
 except ModuleNotFoundError as e:
     print(e)
@@ -79,7 +76,6 @@ class Handler(FileSystemEventHandler):
                 if temp == -1:
                     Watcher.temp = 1
                     import shutil
-                    shutil.copy(event.src_path, "C:\shinhoo\Monitering\Temp\\")
 
             elif Extension == '.exe':
 
