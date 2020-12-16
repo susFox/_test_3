@@ -111,6 +111,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.tableWidget_smp.setObjectName("tableWidget_smp")
         self.tableWidget_smp.setColumnCount(2)
         self.tableWidget_smp.setRowCount(0)
+        self.tableWidget_smp.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -251,7 +252,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.pushButton_run.setEnabled(False)
 
         self.pushButton_hidden = QtWidgets.QPushButton(self.tab_2)
-        self.pushButton_hidden.setGeometry(QtCore.QRect(462, 418, 20, 20))
+        self.pushButton_hidden.setGeometry(QtCore.QRect(0, 420, 15, 15))
         self.pushButton_hidden.setObjectName("pushButton_hidden")
         self.pushButton_hidden.setStyleSheet("border-style: outset;\n"
                                              "border-width: 0px;\n"
@@ -755,7 +756,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton_bcd_1.setEnabled(True)
         self.radioButton_bcd_2.setEnabled(True)
         self.lineEdit_smp_bcd.setEnabled(False)
-        self.Reload()
+
 
     # plrn path 추가
     def enable_path(self, i):
