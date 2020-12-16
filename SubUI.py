@@ -28,6 +28,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
     temp_bcd_list = []
     DB = WorkList_db_class()
     print("shinhoo chaehwan")
+    print(111111)
 
     def __init__(self):
         super().__init__()
