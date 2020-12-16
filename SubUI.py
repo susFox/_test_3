@@ -11,19 +11,21 @@ import subprocess
 import time
 from WorkList_db import WorkList_db_class
 
-print(sys.version, "SubUI\n")
+
+# print(sys.version, "SubUI\n")
 
 class Ui_MainWindow(QtWidgets.QDialog):
     plate_type = "Plate"
     cap_type = "Cap"
     ctrl_seq = "NC, PC"
+    selection_bcd = ""
     smp_count_1 = 0
     smp_count_2 = 0
     path1 = ""
     temp_src = ""
+    Sel_Signal = 0
     bcd_list = []
     temp_bcd_list = []
-    bcd_count = 0
     DB = WorkList_db_class()
 
     def __init__(self):
@@ -48,6 +50,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.lineEdit_smp_bcd.setFont(font)
         self.lineEdit_smp_bcd.setStyleSheet("")
         self.lineEdit_smp_bcd.setObjectName("lineEdit_smp_bcd")
+        self.lineEdit_smp_bcd.setEnabled(False)
         self.toolButton_load = QtWidgets.QToolButton(self.Tab_1)
         self.toolButton_load.setGeometry(QtCore.QRect(233, 100, 28, 22))
         font = QtGui.QFont()
@@ -56,21 +59,58 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.toolButton_load.setFont(font)
         self.toolButton_load.setStyleSheet("")
         self.toolButton_load.setObjectName("toolButton_load")
-        self.pushButton_smp_ok = QtWidgets.QPushButton(self.Tab_1)
-        self.pushButton_smp_ok.setGeometry(QtCore.QRect(191, 101, 40, 20))
+        self.pushButton_temp = QtWidgets.QPushButton(self.Tab_1)
+        self.pushButton_temp.setGeometry(QtCore.QRect(191, 101, 0, 0))
+
+        self.tabWidget_bcd = QtWidgets.QTabWidget(self.Tab_1)  ####################### 바코드 리스트 탭
+        self.tabWidget_bcd.setGeometry(QtCore.QRect(70, 170, 511, 561))
+        self.tabWidget_bcd.setObjectName("tabWidget_bcd")
+        self.Tab_bcd_1 = QtWidgets.QWidget()
+        self.Tab_bcd_1.setObjectName("Tab_bcd_1")
+        self.Tab_bcd_2 = QtWidgets.QWidget()
+        self.Tab_bcd_2.setObjectName("Tab_bcd_2")
+
+        self.tableWidget_smp_select = QtWidgets.QTableWidget(self.Tab_bcd_2)
+        self.tableWidget_smp_select.setGeometry(QtCore.QRect(0, 0, 511, 561))
+        self.tableWidget_smp_select.setObjectName("tableWidget_smp_select")
+        self.tableWidget_smp_select.setColumnCount(1)
+        self.tableWidget_smp_select.setRowCount(0)
+        item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
-        self.pushButton_smp_ok.setFont(font)
-        self.pushButton_smp_ok.setStyleSheet("background-color: rgb(77, 154, 231);\n"
-                                             "color: rgb(255, 255, 255);")
-        self.pushButton_smp_ok.setObjectName("pushButton_smp_ok")
-        self.tableWidget_smp = QtWidgets.QTableWidget(self.Tab_1)
-        self.tableWidget_smp.setGeometry(QtCore.QRect(70, 170, 511, 561))
+        item.setFont(font)
+        self.tableWidget_smp_select.setHorizontalHeaderItem(0, item)
+        self.tableWidget_smp_select.horizontalHeader().setStretchLastSection(True)
+
+        self.radioButton_bcd_1 = QtWidgets.QRadioButton(self.Tab_1)
+        self.radioButton_bcd_1.setGeometry(QtCore.QRect(70, 140, 120, 25))
+        self.radioButton_bcd_1.setObjectName("radioButton_bcd_1")
+        self.buttonGroup_1 = QtWidgets.QButtonGroup(self)
+        self.buttonGroup_1.setObjectName("buttonGroup_2")
+        self.buttonGroup_1.addButton(self.radioButton_bcd_1)
+        self.radioButton_bcd_2 = QtWidgets.QRadioButton(self.Tab_1)
+        self.radioButton_bcd_2.setGeometry(QtCore.QRect(190, 140, 135, 25))
+        self.radioButton_bcd_2.setObjectName("radioButton_bcd_2")
+        self.buttonGroup_1.addButton(self.radioButton_bcd_2)
+
+        self.pushButton_confirm = QtWidgets.QPushButton(self.Tab_1)
+        self.pushButton_confirm.setGeometry(QtCore.QRect(490, 136, 71, 28))  # 490, 136, 71, 28
+        self.pushButton_confirm.setObjectName("pushButton_confirm")
+        self.pushButton_confirm.setEnabled(False)
+
+        self.pushButton_cancel = QtWidgets.QPushButton(self.Tab_1)
+        self.pushButton_cancel.setGeometry(QtCore.QRect(490, 136, 71, 28))
+        self.pushButton_cancel.setObjectName("pushButton_cancel")
+        self.pushButton_cancel.setVisible(False)
+
+        self.tableWidget_smp = QtWidgets.QTableWidget(self.Tab_bcd_1)
+        self.tableWidget_smp.setGeometry(QtCore.QRect(0, 0, 511, 561))
         self.tableWidget_smp.setObjectName("tableWidget_smp")
-        self.tableWidget_smp.setColumnCount(3)
+        self.tableWidget_smp.setColumnCount(2)
         self.tableWidget_smp.setRowCount(0)
+        self.tableWidget_smp.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         item = QtWidgets.QTableWidgetItem()
         font = QtGui.QFont()
         font.setPointSize(10)
@@ -85,21 +125,24 @@ class Ui_MainWindow(QtWidgets.QDialog):
         font.setWeight(75)
         item.setFont(font)
         self.tableWidget_smp.setHorizontalHeaderItem(1, item)
-        item = QtWidgets.QTableWidgetItem()
+
+        self.pushButton_smp_ok = QtWidgets.QPushButton(self.Tab_1)
+        self.pushButton_smp_ok.setGeometry(QtCore.QRect(191, 101, 40, 20))
         font = QtGui.QFont()
         font.setPointSize(10)
         font.setBold(True)
-        font.setWeight(75)
-        item.setFont(font)
-        self.tableWidget_smp.setHorizontalHeaderItem(2, item)
+        self.pushButton_smp_ok.setFont(font)
+        self.pushButton_smp_ok.setStyleSheet("background-color: rgb(77, 154, 231);\n"
+                                             "color: rgb(255, 255, 255);\n"
+                                             "border-width: 0px;")
+        self.pushButton_smp_ok.setObjectName("pushButton_smp_ok")
 
-        self.pushButton_copy = QtWidgets.QPushButton(self.Tab_1)
-        self.pushButton_copy.setGeometry(QtCore.QRect(410, 136, 71, 28))
-        self.pushButton_copy.setObjectName("pushButton_copy")
-        self.pushButton_reload = QtWidgets.QPushButton(self.Tab_1)
-        self.pushButton_reload.setGeometry(QtCore.QRect(490, 136, 71, 28))
-        self.pushButton_reload.setObjectName("pushButton_reload")
-
+        # self.pushButton_copy = QtWidgets.QPushButton(self.Tab_1)
+        # self.pushButton_copy.setGeometry(QtCore.QRect(410, 160, 71, 28))
+        # self.pushButton_copy.setObjectName("pushButton_copy")
+        # self.pushButton_reload = QtWidgets.QPushButton(self.Tab_1)
+        # self.pushButton_reload.setGeometry(QtCore.QRect(490, 160, 71, 28))
+        # self.pushButton_reload.setObjectName("pushButton_reload")
         self.label_smp_count = QtWidgets.QLabel(self.Tab_1)
         self.label_smp_count.setGeometry(QtCore.QRect(29, 100, 101, 21))
         font = QtGui.QFont()
@@ -126,6 +169,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.pushButton_next_1 = QtWidgets.QPushButton(self.Tab_1)
         self.pushButton_next_1.setGeometry(QtCore.QRect(530, 750, 93, 28))
         self.pushButton_next_1.setObjectName("pushButton_next_1")
+        self.pushButton_next_1.setEnabled(False)
         self.pushButton_arrow_1 = QtWidgets.QPushButton(self.Tab_1)
         self.pushButton_arrow_1.setGeometry(QtCore.QRect(315, 60, 16, 31))
         self.pushButton_arrow_1.setStyleSheet("image: url(:/newPrefix/pic_1.png);\n"
@@ -164,7 +208,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
                                                       "\n"
                                                       "")
         self.pushButton_protocol_info_1.setObjectName("pushButton_protocol_info_1")
-        self.pushButton_protocol_info_1.setEnabled(False)
         self.line_5 = QtWidgets.QFrame(self.Tab_1)
         self.line_5.setGeometry(QtCore.QRect(0, 85, 685, 8))
         self.line_5.setFrameShadow(QtWidgets.QFrame.Plain)
@@ -173,7 +216,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.line_5.setObjectName("line_5")
         self.lineEdit_smp_bcd.raise_()
         self.toolButton_load.raise_()
-        self.pushButton_smp_ok.raise_()
         self.tableWidget_smp.raise_()
         self.label_smp_count.raise_()
         self.lineEdit_smp_count.raise_()
@@ -184,6 +226,8 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.line_5.raise_()
         self.pushButton_arrow_1.raise_()
         self.tabWidget.addTab(self.Tab_1, "")
+        self.tabWidget_bcd.addTab(self.Tab_bcd_1, "")
+        self.tabWidget_bcd.addTab(self.Tab_bcd_2, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
         self.label_protocol = QtWidgets.QLabel(self.tab_2)
@@ -197,13 +241,9 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.pushButton_prev_1 = QtWidgets.QPushButton(self.tab_2)
         self.pushButton_prev_1.setGeometry(QtCore.QRect(30, 750, 93, 28))
         self.pushButton_prev_1.setObjectName("pushButton_prev_1")
-        self.listWidget_protocol = QtWidgets.QListWidget(self.tab_2) 
+        self.listWidget_protocol = QtWidgets.QListWidget(self.tab_2)
         self.listWidget_protocol.setGeometry(QtCore.QRect(110, 120, 370, 71))
         self.listWidget_protocol.setObjectName("listWidget_protocol")
-        item = QtWidgets.QListWidgetItem()
-        self.listWidget_protocol.addItem(item)
-        item = QtWidgets.QListWidgetItem()
-        self.listWidget_protocol.addItem(item)
         self.listWidget_protocol.setEnabled(False)
         self.pushButton_run = QtWidgets.QPushButton(self.tab_2)
         self.pushButton_run.setGeometry(QtCore.QRect(530, 750, 93, 28))
@@ -211,12 +251,12 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.pushButton_run.setEnabled(False)
 
         self.pushButton_hidden = QtWidgets.QPushButton(self.tab_2)
-        self.pushButton_hidden.setGeometry(QtCore.QRect(462, 418, 20, 20))
+        self.pushButton_hidden.setGeometry(QtCore.QRect(0, 420, 15, 15))
         self.pushButton_hidden.setObjectName("pushButton_hidden")
         self.pushButton_hidden.setStyleSheet("border-style: outset;\n"
-                                              "border-width: 0px;\n"
-                                              "border-color: black;\n"
-                                              "")
+                                             "border-width: 0px;\n"
+                                             "border-color: black;\n"
+                                             "")
         self.label_tube_type = QtWidgets.QLabel(self.tab_2)
         self.label_tube_type.setGeometry(QtCore.QRect(30, 260, 131, 21))
         font = QtGui.QFont()
@@ -555,13 +595,13 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.setWindowTitle(_translate("MainWindow", "Seegene WorkList"))
         self.toolButton_load.setText(_translate("MainWindow", "..."))
         self.toolButton_plrn_path.setText(_translate("MainWindow", "..."))
-        self.pushButton_smp_ok.setText(_translate("MainWindow", "OK"))
         item = self.tableWidget_smp.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "WorkList Barcode"))
         item_2 = self.tableWidget_smp.horizontalHeaderItem(1)
         item_2.setText(_translate("MainWindow", "Instrument Barcode"))
-        item_3 = self.tableWidget_smp.horizontalHeaderItem(2)
-        item_3.setText(_translate("MainWindow", "Check"))
+        item_4 = self.tableWidget_smp_select.horizontalHeaderItem(0)
+        item_4.setText(_translate("MainWindow", "Barcode"))
+
         self.label_smp_count.setText(_translate("MainWindow", "Sample Count"))
         self.label_smp_bcd.setText(_translate("MainWindow", "Barcode"))
         self.pushButton_next_1.setText(_translate("MainWindow", "Next"))
@@ -570,18 +610,11 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.pushButton_protocol_info_1.setText(_translate("MainWindow", "Protocol Information"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Tab_1), _translate("MainWindow", "Tab_1"))
         self.label_protocol.setText(_translate("MainWindow", "Protocol"))
-        __sortingEnabled = self.listWidget_protocol.isSortingEnabled()
-        self.listWidget_protocol.setSortingEnabled(False)
-        item = self.listWidget_protocol.item(0)
-        item.setText(_translate("MainWindow", "nCoV"))
-        item = self.listWidget_protocol.item(1)
-        item.setText(_translate("MainWindow", "RP1"))
-        # item = self.listWidget_protocol.item(2)
-        # item.setText(_translate("MainWindow", "HPV"))
-        self.listWidget_protocol.setSortingEnabled(__sortingEnabled)
         self.pushButton_run.setText(_translate("MainWindow", "Make"))
         self.pushButton_hidden.setText(_translate("MainWindow", ""))
         self.label_tube_type.setText(_translate("MainWindow", "Tube/Plate Type"))
+        self.radioButton_bcd_1.setText(_translate("MainWindow", "WorkList Barcode"))
+        self.radioButton_bcd_2.setText(_translate("MainWindow", "Instrument Barcode"))
         self.radioButton_tube_1.setText(_translate("MainWindow", "Plate"))
         self.radioButton_tube_2.setText(_translate("MainWindow", "8 - Strip Tube"))
         self.label_cap_type.setText(_translate("MainWindow", "Cap Type"))
@@ -610,54 +643,118 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.label_worklist_3.setText(_translate("MainWindow", " Seegene WorkList"))
         self.pushButton_Home.setText(_translate("MainWindow", "Home"))
         self.pushButton_Option.setText(_translate("MainWindow", "Option"))
-        self.pushButton_copy.setText(_translate("MainWindow", "Copy(All)"))
-        self.pushButton_reload.setText(_translate("MainWindow", "Reload"))
+        # self.pushButton_copy.setText(_translate("MainWindow", "Copy(All)"))
+        # self.pushButton_reload.setText(_translate("MainWindow", "Reload"))
+        self.pushButton_smp_ok.setText(_translate("MainWindow", "OK"))
+        self.pushButton_confirm.setText(_translate("MainWindow", "Confirm"))
+        self.pushButton_cancel.setText(_translate("MainWindow", "Cancel"))
 
         # Instrument Barcode Setting, Style Sheet
         self.Bcd_list()
         self.tableWidget_smp.resizeColumnsToContents()
         self.tableWidget_smp.resizeRowsToContents()
-
         self.tableWidget_smp.setStyleSheet("color: black;"
                                            "font: 15px;"
                                            "padding: 1px;"
                                            "header: 10px;"
                                            )
-        self.tableWidget_smp.setColumnWidth(0, 210)
-        self.tableWidget_smp.setColumnWidth(1, 210)
-        self.tableWidget_smp.setColumnWidth(2, 60)
+        self.tableWidget_smp.setColumnWidth(0, 240)
+        self.tableWidget_smp.setColumnWidth(1, 240)
 
         # 버튼
-        self.pushButton_next_1.setEnabled(False)
         self.pushButton_next_1.clicked.connect(self.page_2)
         self.pushButton_prev_1.clicked.connect(self.page_1)
-        
         self.pushButton_Option.clicked.connect(self.page_option)
         self.pushButton_Home.clicked.connect(self.page_home)
-        self.lineEdit_smp_count.returnPressed.connect(self.Count_smp)
         self.pushButton_smp_ok.clicked.connect(self.Count_smp)
+        self.lineEdit_smp_count.returnPressed.connect(self.Count_smp)
         self.toolButton_load.clicked.connect(self.Load_csv)
         self.lineEdit_smp_bcd.returnPressed.connect(self.BCD_smp)
+        self.buttonGroup_1.buttonClicked.connect(self.Select_bcd)
+        self.buttonGroup_1.buttonClicked.connect(self.Sel_List)
         self.buttonGroup_2.buttonClicked.connect(self.Select_plate)
         self.buttonGroup_3.buttonClicked.connect(self.Select_cap)
         self.buttonGroup_4.buttonClicked.connect(self.Select_ctrl)
-        self.toolButton_plrn_path.clicked.connect(lambda : self.plrn_path(1))
+        self.toolButton_plrn_path.clicked.connect(lambda: self.plrn_path(1))
         self.pushButton_run.clicked.connect(self.Run)
-
-        
 
         self.lineEdit_pcr_bcd.returnPressed.connect(self.display_test_count)
         self.lineEdit_pcr_bcd.returnPressed.connect(self.check_test_count)
-        self.pushButton_reload.clicked.connect(self.Reload)
-        self.pushButton_copy.clicked.connect(self.Copy)
-
+        # self.pushButton_reload.clicked.connect(self.Reload)
+        # self.pushButton_copy.clicked.connect(self.Copy)
         self.pushButton_hidden.clicked.connect(self.Hidden)
 
-        self.add_path_2.clicked.connect(lambda : self.enable_path(2)) # add path 체크
-        self.add_path_3.clicked.connect(lambda : self.enable_path(3))
-        self.toolButton_plrn_path_2.clicked.connect(lambda : self.plrn_path(2)) # add dir
-        self.toolButton_plrn_path_3.clicked.connect(lambda : self.plrn_path(3))
+        self.add_path_2.clicked.connect(lambda: self.enable_path(2))  # add path 체크
+        self.add_path_3.clicked.connect(lambda: self.enable_path(3))
+        self.toolButton_plrn_path_2.clicked.connect(lambda: self.plrn_path(2))  # add dir
+        self.toolButton_plrn_path_3.clicked.connect(lambda: self.plrn_path(3))
 
+        self.pushButton_confirm.clicked.connect(self.Confirm)
+        self.pushButton_cancel.clicked.connect(self.Cancel)
+
+        self.update_setting()
+
+    # 해당 바코드 선택시 배경화면 변경하는 기능
+    def Sel_List(self):
+        try:
+
+            if self.radioButton_bcd_1.isChecked() == True:
+                self.Sel_Signal = 0
+            elif self.radioButton_bcd_2.isChecked() == True:
+                self.Sel_Signal = 1
+
+            if self.Sel_Signal == 0:
+                for i in range(self.tableWidget_smp.rowCount()):
+                    self.tableWidget_smp.item(i, 0).setBackground(QtGui.QColor(183, 229, 191))
+                    self.tableWidget_smp.item(i, 1).setBackground(QtGui.QColor(255, 255, 255))
+            elif self.Sel_Signal == 1:
+                for i in range(self.tableWidget_smp.rowCount()):
+                    self.tableWidget_smp.item(i, 0).setBackground(QtGui.QColor(255, 255, 255))
+                    self.tableWidget_smp.item(i, 1).setBackground(QtGui.QColor(183, 229, 191))
+        except Exception as err:
+            print(err)
+
+    # confirm 버튼
+    def Confirm(self):
+        self.tabWidget_bcd.setCurrentIndex(1)
+        self.pushButton_smp_ok.setEnabled(False)
+        self.lineEdit_smp_count.setEnabled(False)
+        self.toolButton_load.setEnabled(False)
+        self.pushButton_cancel.setVisible(True)
+        self.pushButton_next_1.setEnabled(True)
+        self.pushButton_confirm.setVisible(False)
+        self.radioButton_bcd_1.setEnabled(False)
+        self.radioButton_bcd_2.setEnabled(False)
+        self.lineEdit_smp_bcd.setEnabled(True)
+        self.lineEdit_smp_bcd.setFocus()
+        try:
+            self.tableWidget_smp_select.setRowCount(self.tableWidget_smp.rowCount())
+
+            if self.Sel_Signal == 0:
+                for i in range(self.tableWidget_smp_select.rowCount()):
+                    self.tableWidget_smp_select.setItem(i, 0, QtWidgets.QTableWidgetItem(
+                        self.tableWidget_smp.item(i, 0).text()))
+            elif self.Sel_Signal == 1:
+                for i in range(self.tableWidget_smp_select.rowCount()):
+                    self.tableWidget_smp_select.setItem(i, 0, QtWidgets.QTableWidgetItem(
+                        self.tableWidget_smp.item(i, 1).text()))
+        except Exception as err:
+            print(err)
+        self.smp_count_1 = self.tableWidget_smp.rowCount()
+        self.smp_count_2 = self.tableWidget_smp.rowCount()
+
+    # cancel 버튼
+    def Cancel(self):
+        self.tabWidget_bcd.setCurrentIndex(0)
+        self.pushButton_smp_ok.setEnabled(True)
+        self.lineEdit_smp_count.setEnabled(True)
+        self.toolButton_load.setEnabled(True)
+        self.pushButton_cancel.setVisible(False)
+        self.pushButton_next_1.setEnabled(False)
+        self.pushButton_confirm.setVisible(True)
+        self.radioButton_bcd_1.setEnabled(True)
+        self.radioButton_bcd_2.setEnabled(True)
+        self.lineEdit_smp_bcd.setEnabled(False)
 
     # plrn path 추가
     def enable_path(self, i):
@@ -668,6 +765,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
             elif self.add_path_2.isChecked() == False:
                 self.textBrowser_plrn_path_2.setEnabled(False)
                 self.toolButton_plrn_path_2.setEnabled(False)
+                self.textBrowser_plrn_path_2.setText("")
                 self.DB.set_dir("", 2)
         elif i == 3:
             if self.add_path_3.isChecked() == True:
@@ -676,8 +774,8 @@ class Ui_MainWindow(QtWidgets.QDialog):
             elif self.add_path_3.isChecked() == False:
                 self.textBrowser_plrn_path_3.setEnabled(False)
                 self.toolButton_plrn_path_3.setEnabled(False)
+                self.textBrowser_plrn_path_3.setText("")
                 self.DB.set_dir("", 3)
-
 
     # Hidden 바코드
     def Hidden(self):
@@ -686,17 +784,14 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.textBrowser_testcount.setText("100")
         self.check_test_count()
 
-
     # 기본 setting값 설정
     def update_setting(self):
-        protocol_name, plate_type, cap_type = self.DB.load_setting()
-        count = self.listWidget_protocol.count()
-        for i in range(count):
+        protocol_name, plate_type, cap_type, ctrl_seq, protocol_list = self.DB.load_setting()
+        for i in range(len(protocol_list)):
+            self.listWidget_protocol.addItem(protocol_list[i][0])
             if protocol_name == self.listWidget_protocol.item(i).text():
-                self.listWidget_protocol.setCurrentRow(i)
-                break
-            # if i == count - 1: # 리스트에 없을 경우 생성
-            #     self.listWidget_protocol.addItem()
+                self.listWidget_protocol.setCurrentItem(self.listWidget_protocol.item(i))
+
         if plate_type == self.radioButton_tube_1.text():
             self.radioButton_tube_1.setChecked(True)
         else:
@@ -706,13 +801,16 @@ class Ui_MainWindow(QtWidgets.QDialog):
             self.radioButton_cap_1.setChecked(True)
         else:
             self.radioButton_cap_2.setChecked(True)
+        if ctrl_seq == self.radioButton_ncpc.text():
+            self.radioButton_ncpc.setChecked(True)
+        else:
+            self.radioButton_pcnc.setChecked(True)
 
     def page_1(self):
         self.tabWidget.setCurrentIndex(0)
 
     def page_2(self):
         self.tabWidget.setCurrentIndex(1)
-        self.update_setting()
 
     def page_option(self):
         self.tabWidget.setCurrentIndex(2)
@@ -728,14 +826,25 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
     def check_test_count(self):
         test_count = self.textBrowser_testcount.toPlainText()
-        smp_count = self.tableWidget_smp.rowCount()
-        if int(test_count) < smp_count :
-            QtWidgets.QMessageBox.information(self, "System", "The remaining amount of PCR Reagent is insufficient.\nPlease Replace PCR Reagent.")
+        smp_count = self.tableWidget_smp_select.rowCount()
+        if int(test_count) < smp_count:
+            QtWidgets.QMessageBox.information(self, "System",
+                                              "The remaining amount of PCR reagent is insufficient.\nPlease replace PCR reagent.")
             self.pushButton_run.setEnabled(False)
         else:
             self.pushButton_run.setEnabled(True)
 
-    # 라디오버튼 Type(Plate, Cap, Control)
+    # 라디오버튼 Type(Barcode, Plate, Cap, Control)
+    def Select_bcd(self):
+        try:
+            if self.tableWidget_smp.item(0, 0).text() != "":
+                self.selection_bcd = self.buttonGroup_1.checkedButton().text()
+                self.pushButton_confirm.setEnabled(True)
+        except:
+            QtWidgets.QMessageBox.information(self, "System", "Please enter the count of samples.")
+            self.radioButton_bcd_1.setChecked(False)
+            self.radioButton_bcd_2.setChecked(False)
+
     def Select_plate(self):
         if self.buttonGroup_2.checkedButton().text() == "8 - Strip Tube":
             self.radioButton_cap_2.setEnabled(False)
@@ -751,41 +860,40 @@ class Ui_MainWindow(QtWidgets.QDialog):
     def Select_ctrl(self):
         self.ctrl_seq = self.buttonGroup_4.checkedButton().text()
 
-
     # plrn 파일 경로 설정
     def plrn_path(self, i):
         dir_path = QtWidgets.QFileDialog.getExistingDirectory()
-        if i == 1:
-            self.textBrowser_plrn_path.setText(dir_path)
-            self.DB.set_dir(dir_path, 1)
-        elif i == 2:
-            self.textBrowser_plrn_path_2.setText(dir_path)
-            self.DB.set_dir(dir_path, 2)
-        elif i == 3:
-            self.textBrowser_plrn_path_3.setText(dir_path)
-            self.DB.set_dir(dir_path, 3)
-
+        if dir_path != "":
+            if i == 1:
+                self.textBrowser_plrn_path.setText(dir_path)
+                self.DB.set_dir(dir_path, 1)
+            elif i == 2:
+                self.textBrowser_plrn_path_2.setText(dir_path)
+                self.DB.set_dir(dir_path, 2)
+            elif i == 3:
+                self.textBrowser_plrn_path_3.setText(dir_path)
+                self.DB.set_dir(dir_path, 3)
 
     # 샘플 개수 OK
     def Count_smp(self):
         count = self.lineEdit_smp_count.text()
-        Ui_MainWindow.bcd_count = count
         try:
             if int(count) < 1:
-                QtWidgets.QMessageBox.information(self, "System", "Please Enter a Number of 1 or more.")
+                QtWidgets.QMessageBox.information(self, "System", "Please enter a number of 1 or more.")
                 self.lineEdit_smp_count.setText("")
             elif 0 < int(count) < 95:
                 self.tableWidget_smp.setRowCount(int(count))
                 for i in range(int(count)):
                     self.tableWidget_smp.setItem(i, 0, QtWidgets.QTableWidgetItem(str(i + 1)))
             elif 94 < int(count):
-                QtWidgets.QMessageBox.information(self, "System", "The Maximum Number of Samples is 94.")
+                QtWidgets.QMessageBox.information(self, "System", "The maximum number of samples is 94.")
                 self.lineEdit_smp_count.setText("")
-            self.smp_count_1 = self.tableWidget_smp.rowCount()
-            self.smp_count_2 = self.tableWidget_smp.rowCount()
         except:
+            QtWidgets.QMessageBox.information(self, "System", "Please enter a number.")
             self.lineEdit_smp_count.setText("")
         self.Reload()
+        if self.radioButton_bcd_1.isChecked() == True or self.radioButton_bcd_2.isChecked() == True:
+            self.Sel_List()
 
     # Load WorkList
     def Load_csv(self):
@@ -795,7 +903,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
             csv_file = pd.read_csv(fname[0], encoding='CP949')
             rdr = csv.reader(csv_file)
             for line in rdr:
-                csv_header.append(line)           
+                csv_header.append(line)
             load_bcd = csv_file['Barcode']
             bcd_val = load_bcd.values.tolist()
             self.tableWidget_smp.setRowCount(len(bcd_val))
@@ -803,53 +911,64 @@ class Ui_MainWindow(QtWidgets.QDialog):
             for i in range(len(bcd_val)):
                 self.tableWidget_smp.setItem(i, 0, QtWidgets.QTableWidgetItem(str(bcd_val[i])))
             Ui_MainWindow.temp_bcd_list = bcd_val
-            self.smp_count_1 = self.tableWidget_smp.rowCount()
-            self.smp_count_2 = self.tableWidget_smp.rowCount()
         else:
-            QtWidgets.QMessageBox.information(self, "System", "No File selected.")
+            QtWidgets.QMessageBox.information(self, "System", "No file selected.")
         self.Reload()
 
+        if self.radioButton_bcd_1.isChecked() == True or self.radioButton_bcd_2.isChecked() == True:
+            self.Sel_List()
 
     # 샘플 바코드 입력
     def BCD_smp(self):
         if self.smp_count_1 > 0:
             bcd = self.lineEdit_smp_bcd.text()
-            self.tableWidget_smp.setItem(self.smp_count_2 - self.smp_count_1, 0, QtWidgets.QTableWidgetItem(bcd))
+            self.tableWidget_smp_select.setItem(self.smp_count_2 - self.smp_count_1, 0, QtWidgets.QTableWidgetItem(bcd))
             self.smp_count_1 -= 1
-            self.lineEdit_smp_bcd.clear()
+            self.lineEdit_smp_bcd.setText("")
         else:
-            self.lineEdit_smp_bcd.clear()
+            self.lineEdit_smp_bcd.setText("")
+
+        if self.radioButton_bcd_1.isChecked() == True or self.radioButton_bcd_2.isChecked() == True:
+            self.Sel_List()
 
     # Run 버튼(DB에 정보 입력, plrn 생성)
     def Run(self):
-        test_count = self.textBrowser_testcount.toPlainText()
-        smp_count = self.tableWidget_smp.rowCount()
-        count = int(test_count) - smp_count
-        if self.listWidget_protocol.currentItem().text() != "" and self.lineEdit_pcr_bcd.text() != "" and count >= 0:
-            smp_bcd = []
-            date = datetime.datetime.now().strftime('%Y-%m-%d %H.%M.%S')
-            Protocol_Name = self.listWidget_protocol.currentItem().text()
-            rowCount = self.tableWidget_smp.rowCount()
-            pcr_bcd = self.lineEdit_pcr_bcd.text()
-            for i in range(rowCount):
-                smp_bcd.append(self.tableWidget_smp.item(i, 0).text())
+        try:
+            test_count = self.textBrowser_testcount.toPlainText()
+            smp_count = self.tableWidget_smp_select.rowCount()  ########################### self.tableWidget_smp 변경
+            count = int(test_count) - smp_count
+            if self.listWidget_protocol.currentItem() != None and self.lineEdit_pcr_bcd.text() != "" and count >= 0:
+                smp_bcd = []
+                date = datetime.datetime.now().strftime('%Y-%m-%d %H.%M.%S')
+                Protocol_Name = self.listWidget_protocol.currentItem().text()
+                rowCount = self.tableWidget_smp_select.rowCount()
+                pcr_bcd = self.lineEdit_pcr_bcd.text()
+                for i in range(rowCount):
+                    smp_bcd.append(self.tableWidget_smp_select.item(i, 0).text())
 
-            id_plrn = self.DB.Input_plrn_data(date, Protocol_Name, rowCount, self.plate_type, self.cap_type, self.ctrl_seq, pcr_bcd)
-            self.DB.Input_sample_data(smp_bcd, id_plrn)
-            self.DB.Use_PCR(pcr_bcd, rowCount)
-            self.DB.make_plrn(id_plrn)
-            self.DB.save_Temp(Protocol_Name, self.plate_type, self.cap_type)
-            self.textBrowser_testcount.setText(str(count))
+                id_plrn = self.DB.Input_plrn_data(date, Protocol_Name, rowCount, self.plate_type, self.cap_type,
+                                                  self.ctrl_seq, pcr_bcd, self.selection_bcd)
+                self.DB.Input_sample_data(smp_bcd, id_plrn)
+                self.DB.Use_PCR(pcr_bcd, rowCount)
+                self.DB.make_plrn(id_plrn)
+                self.DB.save_Temp(Protocol_Name, self.plate_type, self.cap_type, self.ctrl_seq)
+                self.textBrowser_testcount.setText(str(count))
 
-        elif self.listWidget_protocol.currentItem().text() == "" or self.lineEdit_pcr_bcd.text() == "":
-            QtWidgets.QMessageBox.information(self, "System", "Please Enter all Protocol Information.")
-            self.pushButton_run.setEnabled(False)
+            elif self.listWidget_protocol.currentItem() == None or self.lineEdit_pcr_bcd.text() == "":
+                QtWidgets.QMessageBox.information(self, "System", "Please enter all protocol information.")
+                self.pushButton_run.setEnabled(False)
 
-        elif count < 0 :
-            QtWidgets.QMessageBox.information(self, "System", "The remaining amount of PCR Reagent is insufficient.\nPlease Replace PCR Reagent.")
-            self.pushButton_run.setEnabled(False)
+            elif count < 0:
+                QtWidgets.QMessageBox.information(self, "System",
+                                                  "The remaining amount of PCR reagent is insufficient.\nPlease replace PCR reagent.")
+                self.pushButton_run.setEnabled(False)
 
-        self.close()
+            self.close()
+            temp = self.DB.Sel_Bcd()
+            file = temp[0][0]
+            os.remove(file)
+        except Exception as err:
+            print(err)
 
     # 초기 바코드 리스트 불러오기
     def Bcd_list(self):
@@ -884,15 +1003,11 @@ class Ui_MainWindow(QtWidgets.QDialog):
                 background.append(cnt)
 
             self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
-            self.tableWidget_smp.setItem(cnt, 2, QtWidgets.QTableWidgetItem(str(count[cnt])))
             self.tableWidget_smp.setRowHeight(cnt, 60)
             cnt += 1
-
         file.close()
-
         for i in range(len(background)):
             self.tableWidget_smp.item(background[i], 1).setBackground(QtGui.QColor(255, 208, 208))
-            self.tableWidget_smp.item(background[i], 2).setBackground(QtGui.QColor(255, 208, 208))
 
     # 바코드 갱신기능
     def Reload(self):
@@ -918,6 +1033,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
             elif len(lines) < int(self.lineEdit_smp_count.text()):
                 for i in range(len(lines)):
                     Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+                QtWidgets.QMessageBox.information(self, "System", "Too Much Samples Count Please confirm Sample.")
             elif len(lines) > int(self.lineEdit_smp_count.text()):
                 for i in range(0, int(self.lineEdit_smp_count.text())):
                     Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
@@ -935,20 +1051,19 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
                 if temp3[2] == Ui_MainWindow.temp_bcd_list[cnt]:
 
-                    print("{0}번째 해당 줄이 같습니다.".format(cnt))
-                    print(temp3[2])
+                    # print("{0}번째 해당 줄이 같습니다.".format(cnt))
+                    # print(temp3[2])
                     count.append("O")
 
                 elif temp3[2] != Ui_MainWindow.temp_bcd_list[cnt]:
-                    print("{0}번째 해당 줄이 다릅니다.".format(2))
-                    print("1번 리스트 : " + temp3[2])
-                    print("2번 리스트 : " + Ui_MainWindow.temp_bcd_list[cnt])
+                    # print("{0}번째 해당 줄이 다릅니다.".format(2))
+                    # print("1번 리스트 : " + temp3[2])
+                    # print("2번 리스트 : " + Ui_MainWindow.temp_bcd_list[cnt])
                     count.append("X")
                     background.append(cnt)
 
                 self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(Ui_MainWindow.temp_bcd_list[cnt])))
                 self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
-                self.tableWidget_smp.setItem(cnt, 2, QtWidgets.QTableWidgetItem(str(count[cnt])))
 
                 cnt += 1
 
@@ -963,7 +1078,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
             for i in range(len(background)):
                 self.tableWidget_smp.item(background[i], 0).setBackground(QtGui.QColor(255, 208, 208))
                 self.tableWidget_smp.item(background[i], 1).setBackground(QtGui.QColor(255, 208, 208))
-                self.tableWidget_smp.item(background[i], 2).setBackground(QtGui.QColor(255, 208, 208))
         except Exception as err:
             print(err)
 
@@ -977,20 +1091,20 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
                     if temp3[2] == Ui_MainWindow.temp_bcd_list[cnt]:
 
-                        print("{0}번째 해당 줄이 같습니다.".format(cnt))
-                        print(temp3[2])
+                        # print("{0}번째 해당 줄이 같습니다.".format(cnt))
+                        # print(temp3[2])
                         count.append("O")
 
                     elif temp3[2] != Ui_MainWindow.temp_bcd_list[cnt]:
-                        print("{0}번째 해당 줄이 다릅니다.".format(2))
-                        print("1번 리스트 : " + temp3[2])
-                        print("2번 리스트 : " + Ui_MainWindow.temp_bcd_list[cnt])
+                        # print("{0}번째 해당 줄이 다릅니다.".format(2))
+                        # print("1번 리스트 : " + temp3[2])
+                        # print("2번 리스트 : " + Ui_MainWindow.temp_bcd_list[cnt])
                         count.append("X")
                         background.append(cnt)
 
-                    self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(Ui_MainWindow.temp_bcd_list[cnt])))
+                    self.tableWidget_smp.setItem(cnt, 0,
+                                                 QtWidgets.QTableWidgetItem(str(Ui_MainWindow.temp_bcd_list[cnt])))
                     self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
-                    self.tableWidget_smp.setItem(cnt, 2, QtWidgets.QTableWidgetItem(str(count[cnt])))
 
                     cnt += 1
 
@@ -1005,7 +1119,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
                 for i in range(len(background)):
                     self.tableWidget_smp.item(background[i], 0).setBackground(QtGui.QColor(255, 208, 208))
                     self.tableWidget_smp.item(background[i], 1).setBackground(QtGui.QColor(255, 208, 208))
-                    self.tableWidget_smp.item(background[i], 2).setBackground(QtGui.QColor(255, 208, 208))
         except Exception as err:
             print(err)
 
@@ -1013,42 +1126,41 @@ class Ui_MainWindow(QtWidgets.QDialog):
             check = 1
 
         if check == 1:
-            self.pushButton_next_1.setEnabled(True)
+            # self.pushButton_next_1.setEnabled(True)
+            pass
         else:
             self.pushButton_next_1.setEnabled(False)
         file.close()
 
     # 바코드리스트 Copy기능
-    def Copy(self):
-        temp = self.DB.Sel_Bcd()
-        self.pushButton_next_1.setEnabled(True)
-        file = open(temp[0][0], "r", encoding="utf8")
-        # 현재 비교할 텍스트 파일
-        lines = file.readlines()  # list 형태로 읽어옴
-        Ui_MainWindow.bcd_list = lines
-        cnt = 0
-        count = []
-        lines.pop(0)
-
-        self.tableWidget_smp.setRowCount(len(lines))
-
-        for line in lines:
-            if not line:
-                break
-            temp3 = lines[cnt].split()
-            temp4 = Ui_MainWindow.bcd_list[cnt].split()
-
-            if temp3[2] == temp4[2]:
-                count.append("O")
-
-            elif temp3[2] == temp4[2]:
-                count.append("X")
-
-            self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(temp3[2])))
-            self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
-            self.tableWidget_smp.setItem(cnt, 2, QtWidgets.QTableWidgetItem(str(count[cnt])))
-            cnt += 1
-
-        file.close()
-
-        self.tableWidget_smp.setRowCount(len(lines))
+    # def Copy(self):
+    #     temp = self.DB.Sel_Bcd()
+    #     # self.pushButton_next_1.setEnabled(True)
+    #     file = open(temp[0][0], "r", encoding="utf8")
+    #     # 현재 비교할 텍스트 파일
+    #     lines = file.readlines()  # list 형태로 읽어옴
+    #     Ui_MainWindow.bcd_list = lines
+    #     cnt = 0
+    #     count = []
+    #     lines.pop(0)
+    #
+    #     self.tableWidget_smp.setRowCount(len(lines))
+    #
+    #     for line in lines:
+    #         if not line:
+    #             break
+    #         temp3 = lines[cnt].split()
+    #         temp4 = Ui_MainWindow.bcd_list[cnt].split()
+    #
+    #         if temp3[2] == temp4[2]:
+    #             count.append("O")
+    #
+    #         elif temp3[2] == temp4[2]:
+    #             count.append("X")
+    #
+    #         self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(temp3[2])))
+    #         self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
+    #         cnt += 1
+    #
+    #     file.close()
+    #     self.tableWidget_smp.setRowCount(len(lines))
