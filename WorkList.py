@@ -10,7 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pandas as pd
-import pic_1_rc
+# import pic_1_rc
 import sys
 import os
 import datetime
@@ -19,9 +19,7 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-import MainUI
-import SubUI
-from WorkList_db import WorkList_db_class
+
 
 class Singleton(type):  # Type을 상속받음
     __instances = {}  # 클래스의 인스턴스를 저장할 속성
@@ -32,8 +30,9 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
-        print("test 중입니다.4ㄷㄷㅇㄷ")
+
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
+
 
 try:
     from watchdog.observers import Observer
@@ -43,14 +42,14 @@ try:
 except ModuleNotFoundError as e:
     print(e)
     os.system("pip install watchdog")
-        
-        
+
+
 class Handler(FileSystemEventHandler):
     def on_created(self, event):  # 파일 생성시
         # Ui_MainWindow.temp_src = "A" #
         temp = event.src_path
         temp = temp.replace('\\', '/')
-        
+
         DB.Inst_bcd_path(event.src_path)
 
         if event.is_directory:
@@ -70,17 +69,15 @@ class Handler(FileSystemEventHandler):
              3. lnk 파일
 
             '''
-			#Extraction명이 들어간 경우는 화면 안나타게끔 예외처리
+            # Extraction명이 들어간 경우는 화면 안나타게끔 예외처리
             temp = temp.find("Extraction")
 
             if Extension == '.txt':
                 if temp == -1:
                     Watcher.temp = 1
                     import shutil
-                    shutil.copy(event.src_path, "C:\\Barcode\\")
-                    
 
-            elif Extension == '.exe': #############
+            elif Extension == '.exe':
 
                 print(".exe 실행 파일 입니다.")
 
@@ -93,6 +90,7 @@ class Handler(FileSystemEventHandler):
     def on_moved(self, event):  # 파일 이동시
 
         print("업데이트 이벤트 발생")
+
 
 class Watcher(metaclass=Singleton):
     # 생성자
@@ -139,7 +137,7 @@ class Watcher(metaclass=Singleton):
 
         )
         self.observer.start()  # 감시 시작
-    
+
         try:
 
             while True:  # 무한 루프
@@ -156,12 +154,13 @@ class Watcher(metaclass=Singleton):
 
     def Main(self):
 
-        dialog_main = MainUI.Ui_MainWindow()
-        dialog_sub = SubUI.Ui_MainWindow()
+        dialog_main = Monitering.MainUI.Ui_MainWindow()
+        dialog_sub = Monitering.SubUI.Ui_MainWindow()
         dialog_main.showFullScreen()
         dialog_sub.exec_()
         dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         Watcher.temp = 0
+
 
 if __name__ == "__main__":
     DB = WorkList_db_class()
@@ -171,7 +170,7 @@ if __name__ == "__main__":
     PE_path = PE_path[0][0]
     os.startfile(PE_path)
     import psutil  # 실행중인 프로세스 및 시스템 활용 라이브러리
-    
+
     for proc in psutil.process_iter():
         try:
             # 프로세스 이름, PID값 가져오기
@@ -182,7 +181,7 @@ if __name__ == "__main__":
                 temp += 1
                 parent_pid = processID  # PID
                 parent = psutil.Process(parent_pid)  # PID 찾기
-                if temp > 2: 
+                if temp > 2:
                     for child in parent.children(recursive=True):  # 자식-부모 종료
                         child.kill()
                     parent.kill()
@@ -192,8 +191,9 @@ if __name__ == "__main__":
 
     import sys
     import os
+
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()  
+    MainWindow = QtWidgets.QMainWindow()
     path1 = ""
     path1 = DB.show_path()
     path1 = path1[0][0]

@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pandas as pd
-import pic_1_rc
+# import pic_1_rc
 import sys
 import os
 import datetime
@@ -9,7 +9,7 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-from WorkList_db import WorkList_db_class
+from Monitering.WorkList_db import WorkList_db_class
 
 
 # print(sys.version, "SubUI\n")
@@ -755,6 +755,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton_bcd_1.setEnabled(True)
         self.radioButton_bcd_2.setEnabled(True)
         self.lineEdit_smp_bcd.setEnabled(False)
+
 
     # plrn path 추가
     def enable_path(self, i):
