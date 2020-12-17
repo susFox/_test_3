@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pandas as pd
-# import pic_1_rc
+import pic_1_rc
 import sys
 import os
 import datetime
@@ -9,10 +9,7 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-from Monitering.WorkList_db import WorkList_db_class
-
-
-# print(sys.version, "SubUI\n")
+from WorkList_db import WorkList_db_class
 
 class Ui_MainWindow(QtWidgets.QDialog):
     plate_type = "Plate"
@@ -27,7 +24,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
     bcd_list = []
     temp_bcd_list = []
     DB = WorkList_db_class()
-    print("shinhoo chaehwan test")
 
     def __init__(self):
         super().__init__()
@@ -70,6 +66,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.Tab_bcd_1.setObjectName("Tab_bcd_1")
         self.Tab_bcd_2 = QtWidgets.QWidget()
         self.Tab_bcd_2.setObjectName("Tab_bcd_2")
+        self.tabWidget_bcd.tabBar().hide()
 
         self.tableWidget_smp_select = QtWidgets.QTableWidget(self.Tab_bcd_2)
         self.tableWidget_smp_select.setGeometry(QtCore.QRect(0, 0, 511, 561))
@@ -757,7 +754,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton_bcd_2.setEnabled(True)
         self.lineEdit_smp_bcd.setEnabled(False)
 
-
     # plrn path 추가
     def enable_path(self, i):
         if i == 2:
@@ -839,13 +835,14 @@ class Ui_MainWindow(QtWidgets.QDialog):
     # 라디오버튼 Type(Barcode, Plate, Cap, Control)
     def Select_bcd(self):
         try:
-            if self.tableWidget_smp.item(0, 0).text() != "":
+            if self.radioButton_bcd_2.isChecked() == True:
+                self.selection_bcd = self.buttonGroup_1.checkedButton().text()
+                self.pushButton_confirm.setEnabled(True)
+            elif self.tableWidget_smp.item(0, 0).text() != "":
                 self.selection_bcd = self.buttonGroup_1.checkedButton().text()
                 self.pushButton_confirm.setEnabled(True)
         except:
             QtWidgets.QMessageBox.information(self, "System", "Please enter the count of samples.")
-            self.radioButton_bcd_1.setChecked(False)
-            self.radioButton_bcd_2.setChecked(False)
 
     def Select_plate(self):
         if self.buttonGroup_2.checkedButton().text() == "8 - Strip Tube":
@@ -896,6 +893,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.Reload()
         if self.radioButton_bcd_1.isChecked() == True or self.radioButton_bcd_2.isChecked() == True:
             self.Sel_List()
+            self.pushButton_confirm.setEnabled(True)
 
     # Load WorkList
     def Load_csv(self):
@@ -919,6 +917,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
         if self.radioButton_bcd_1.isChecked() == True or self.radioButton_bcd_2.isChecked() == True:
             self.Sel_List()
+            self.pushButton_confirm.setEnabled(True)
 
     # 샘플 바코드 입력
     def BCD_smp(self):
@@ -1014,69 +1013,71 @@ class Ui_MainWindow(QtWidgets.QDialog):
     # 바코드 갱신기능
     def Reload(self):
         temp = self.DB.Sel_Bcd()
-        file = open(temp[0][0], "r", encoding="utf8")
-        # 현재 비교할 텍스트 파일
+        file = open(temp[0][0], "r", encoding="utf8") # 현재 비교할 텍스트 파일
         lines = file.readlines()  # list 형태로 읽어옴
-        lines.pop(0)
+        lines.pop(0) # Header는 제외 (CODE)
         cnt = 0
         check = 0
         count = []
         background = []
-        Ui_MainWindow.temp_bcd_list = []
+        self.temp_bcd_list = []
         try:
-            if len(lines) > int(self.lineEdit_smp_count.text()):
+            if len(lines) > int(self.lineEdit_smp_count.text()): # Sample Count 수보다 텍스트파일 Barcode가 많을 경우
                 self.tableWidget_smp.setRowCount(int(self.lineEdit_smp_count.text()))
             else:
-                self.tableWidget_smp.setRowCount(len(lines))
+                self.tableWidget_smp.setRowCount(len(lines)) # 같거나 작을경우는 텍스트파일 Barcode 기준으로 행 세팅
 
-            if len(lines) == int(self.lineEdit_smp_count.text()):
+            if len(lines) == int(self.lineEdit_smp_count.text()): # 같거나 작거나 많거나 Sampler Count에 적힌 수만큼 임시 바코드리트에 넣어줌
                 for i in range(0, int(self.lineEdit_smp_count.text())):
-                    Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+                    self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
             elif len(lines) < int(self.lineEdit_smp_count.text()):
                 for i in range(len(lines)):
-                    Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+                    self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
                 QtWidgets.QMessageBox.information(self, "System", "Too Much Samples Count Please confirm Sample.")
             elif len(lines) > int(self.lineEdit_smp_count.text()):
                 for i in range(0, int(self.lineEdit_smp_count.text())):
-                    Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+                    self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
         except Exception as err:
             print(err)
 
         try:
-            for line in lines:
-                if not line:
+            for line in lines: #텍스트파일 라인수만큼 반복
+                if not line: #라인이 없을경우 반복문 break
                     break
                 if len(lines) > int(self.lineEdit_smp_count.text()):
                     break
 
-                temp3 = lines[cnt].split()
+                temp3 = lines[cnt].split() #한 줄을 쪼갬
 
-                if temp3[2] == Ui_MainWindow.temp_bcd_list[cnt]:
+                if temp3[2] == Ui_MainWindow.temp_bcd_list[cnt]: # 한 라인의 Code와 임시 바코드와 비교
 
                     # print("{0}번째 해당 줄이 같습니다.".format(cnt))
                     # print(temp3[2])
-                    count.append("O")
+                    count.append("O") # Check List
 
-                elif temp3[2] != Ui_MainWindow.temp_bcd_list[cnt]:
+                elif temp3[2] != self.temp_bcd_list[cnt]:
                     # print("{0}번째 해당 줄이 다릅니다.".format(2))
                     # print("1번 리스트 : " + temp3[2])
                     # print("2번 리스트 : " + Ui_MainWindow.temp_bcd_list[cnt])
                     count.append("X")
-                    background.append(cnt)
-
-                self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(Ui_MainWindow.temp_bcd_list[cnt])))
+                    background.append(cnt) # 현재 행에 대한 BackGround List
+                # 첫번째 컬럼 text를 임시 바코드리스트에 있는 값으로 세팅
+                # 두번째 컬럼은 텍스트파일의 값으로 세팅(cnt를 통해서 각 행에 대한 값으로 세팅)
+                self.tableWidget_smp.setItem(cnt, 0, QtWidgets.QTableWidgetItem(str(self.temp_bcd_list[cnt])))
                 self.tableWidget_smp.setItem(cnt, 1, QtWidgets.QTableWidgetItem(str(temp3[2])))
 
                 cnt += 1
 
+			# 텍스트파일의 라인수보다 샘플카운트가 크거나 같다면 임시바코드리스트에 라인수만큼 넣어줌.
             if len(lines) <= int(self.lineEdit_smp_count.text()):
                 for i in range(len(lines)):
-                    Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
-
+                    self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+            # 텍스트파일의 라인수가 샘플카운트가 작아도 임시바코드리스트에 라인수만큼 넣어줌.
             elif len(lines) > int(self.lineEdit_smp_count.text()):
-                for i in range(len(Ui_MainWindow.temp_bcd_list)):
-                    Ui_MainWindow.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
+                for i in range(len(self.temp_bcd_list)):
+                    self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())
 
+            #비교했을때 다른경우에만 Background에 넣어주었고, Background 리스트 수만큼 Backgroun Color 세팅
             for i in range(len(background)):
                 self.tableWidget_smp.item(background[i], 0).setBackground(QtGui.QColor(255, 208, 208))
                 self.tableWidget_smp.item(background[i], 1).setBackground(QtGui.QColor(255, 208, 208))

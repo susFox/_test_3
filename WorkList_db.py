@@ -23,6 +23,7 @@ class Singleton(type):  # Type을 상속받음
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
 
 
+class WorkList_db_class(metaclass=Singleton):
 
     # Info_plrn 테이블에 plrn 데이터 입력
     def Input_plrn_data(self, date, protocol_name, smp_num, plate_type, cap_type, ctrl_seq, pcr_bcd, bcd_list):
@@ -41,7 +42,8 @@ class Singleton(type):  # Type을 상속받음
                     insert into Info_plrn(Date, Protocol_Name, Smp_Num, Plate_Type, Cap_Type, Ctrl_Seq, PCR_bcd, BarcodeList)
                     values(?, ?, ?, ?, ?, ?, ?, ?)
                     '''
-
+                    , (self.date, self.protocol_name, self.smp_num, self.plate_type, self.cap_type, self.ctrl_seq,
+                       self.pcr_bcd, self.bcd_list))
         conn.commit()
         cur.execute("select ID from Info_plrn where Date = (%s)" % ("'" + self.date + "'"))
         id_plrn = cur.fetchall()
@@ -100,6 +102,7 @@ class Singleton(type):  # Type을 상속받음
             cur.close()
             conn.close()
 
+    # 현재 감시하고 있는 파일 경로를 데이터베이스에서 가져옴
     def show_path(self):
         print("show_path ", os.getcwd())
         conn = sqlite3.connect(db_con)
@@ -110,6 +113,7 @@ class Singleton(type):  # Type을 상속받음
         conn.close()
         return b_info
 
+    # 현 바코드 파일경로를 데이터베이스에서 가져옴
     def Sel_Bcd(self):
         conn = sqlite3.connect(db_con)
         cur = conn.cursor()
@@ -119,6 +123,7 @@ class Singleton(type):  # Type을 상속받음
         conn.close()
         return b_info
 
+    # 현 바코드 파일경로를 실시간으로 변경시켜줌
     def update(self, Barcod_List):
         self.bcd_list = Barcod_List
 
@@ -152,7 +157,9 @@ class Singleton(type):  # Type을 상속받음
         smp_bcd = []
         for i in range(smp_num):
             smp_bcd.append(info_smp[i][0])
-
+        cur.execute(
+            "select Protocol_Path, Light from Info_protocol where Protocol_Name = (%s)" % ("'" + Protocol_Name + "'"))
+        info_protocol = cur.fetchall()
         Inst_Name = "PreNATII"
         plateBarcode = ""
         ExtractBarcode = ""
@@ -176,7 +183,8 @@ class Singleton(type):  # Type을 상속받음
         plt_pos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
         for i in range(smp_num + 2):
             if i < smp_num:
-
+                smp += str(plt_pos[i % 8]) + str((i // 8) + 1).zfill(
+                    2) + f",{info_protocol[0][1]},,,Unknown,{smp_bcd[i]},,,,,,1_1_0,,,,,,,,,{Protocol_Name},,,,,," + "\n"
             elif i == smp_num:
                 ctrl_1 = str(plt_pos[i % 8]) + str((i // 8) + 1).zfill(2)
             else:
@@ -187,7 +195,6 @@ class Singleton(type):  # Type을 상속받음
         elif ctrl_seq == "PC, NC":
             smp += f"{ctrl_1}" + f",{info_protocol[0][1]},,,Positive Control,PC,,,,,,0_1_0,,,,,,,,,{Protocol_Name},,,,,," + "\n"
             smp += f"{ctrl_2}" + f",{info_protocol[0][1]},,,Negative Control,NC,,,,,,0_1_0,,,,,,,,,{Protocol_Name},,,,,," + "\n"
-
         f = open(dir_plrn_1, 'w')
         f.write(
             f'''Plate Header,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -219,7 +226,7 @@ Well,Ch1 Dye,Ch2 Dye,Ch3 Dye,Ch4 Dye,Ch5 Dye,FRET,Sample Type,Sample Name,Ch1 Ta
 
             src = dir_plrn_1
             shutil.copy(src, add_path_2)
-            
+
         if add_path_3 != "":
             add_path_3 = add_path_3.replace("/", "\\") + f"\\{Protocol_Name}"
             try:
@@ -230,7 +237,6 @@ Well,Ch1 Dye,Ch2 Dye,Ch3 Dye,Ch4 Dye,Ch5 Dye,FRET,Sample Type,Sample Name,Ch1 Ta
             add_path_3 = add_path_3 + f"\\plrn, {Inst_Name}, {date}, {Protocol_Name}.plrn"
             src = dir_plrn_1
             shutil.copy(src, add_path_3)
-
         cur.execute("update Monitor set (Path_plrn, Use_plrn) = ((%s), (%d))" % ("'" + dir_plrn_1 + "'", 0))
         conn.commit()
         cur.execute("select Path_plrn from Monitor")
@@ -267,7 +273,8 @@ Well,Ch1 Dye,Ch2 Dye,Ch3 Dye,Ch4 Dye,Ch5 Dye,FRET,Sample Type,Sample Name,Ch1 Ta
         cur.execute("select Protocol_Name from Temp where Protocol_Name = (%s)" % ("'" + protocol_name[-1] + "'"))
         name = cur.fetchall()
         if name == []:
-
+            cur.execute("insert into Temp(Protocol_Name, Plate_Type, Cap_Type, Control) values(?, ?, ?, ?)",
+                        (protocol_name[-1], "Plate", "Cap", "NC, PC"))
             conn.commit()
         cur.close()
         conn.close()
@@ -276,7 +283,9 @@ Well,Ch1 Dye,Ch2 Dye,Ch3 Dye,Ch4 Dye,Ch5 Dye,FRET,Sample Type,Sample Name,Ch1 Ta
     def save_Temp(self, protocol, plate_type, cap_type, ctrl_seq):
         conn = sqlite3.connect(db_con)
         cur = conn.cursor()
-
+        cur.execute(
+            "update Temp set (Plate_Type, Cap_Type, Control) = ((%s), (%s), (%s)) where Protocol_Name = (%s)" % (
+            "'" + plate_type + "'", "'" + cap_type + "'", "'" + ctrl_seq + "'", "'" + protocol + "'"))
         conn.commit()
         cur.close()
         conn.close()
@@ -306,9 +315,8 @@ Well,Ch1 Dye,Ch2 Dye,Ch3 Dye,Ch4 Dye,Ch5 Dye,FRET,Sample Type,Sample Name,Ch1 Ta
         conn.close()
         return path
 
-
+    # PerkinElmer 실행경로를 데이터베이스에서 가져옴
     def show_PE_path(self):
-        print("PE_path ", os.getcwd())
         conn = sqlite3.connect(db_con)
         cur = conn.cursor()
         cur.execute("SELECT PE_path FROM Monitor")
