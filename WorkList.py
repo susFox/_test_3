@@ -10,7 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pandas as pd
-# import pic_1_rc
+import pic_1_rc
 import sys
 import os
 import datetime
@@ -22,6 +22,11 @@ import time
 import Monitering.MainUI
 import Monitering.SubUI
 from Monitering.WorkList_db import WorkList_db_class
+
+import MainUI
+import SubUI
+from WorkList_db import WorkList_db_class
+
 
 
 class Singleton(type):  # Type을 상속받음
@@ -78,7 +83,11 @@ class Handler(FileSystemEventHandler):
                 if temp == -1:  # Extraction이 들어가지 않은 경우에만  화면 띄워주는 시그널을 1로 줌
                     Watcher.temp = 1
                     import shutil  # 파일을 다른곳에 백업 시켜둠.
+
                     shutil.copy(event.src_path, "C:\shinhoo\Monitering\Temp\\")  ########## 경
+
+                    shutil.copy(event.src_path, "C:\\Barcode\\")  ########## 경
+
 
 
             elif Extension == '.exe':
@@ -151,6 +160,10 @@ class Watcher(metaclass=Singleton):
     def Main(self):
         dialog_main = Monitering.MainUI.Ui_MainWindow()  # 배경화면 화면 객체생성
         dialog_sub = Monitering.SubUI.Ui_MainWindow()  # 바코드 비교화면 객체생성
+
+        dialog_main = MainUI.Ui_MainWindow()  # 배경화면 화면 객체생성
+        dialog_sub = SubUI.Ui_MainWindow()  # 바코드 비교화면 객체생성
+
         dialog_main.showFullScreen()  # 배경화면은 전체화면으로 띄워줌
         dialog_sub.exec_()  # 바코드 비교화면 실행
         dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)  # 비교화면을 가장 최상단으로 만들어줌.

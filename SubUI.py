@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pandas as pd
-# import pic_1_rc
+import pic_1_rc
 import sys
 import os
 import datetime
@@ -9,7 +9,11 @@ import sqlite3
 import ctypes
 import subprocess
 import time
+
 from Monitering.WorkList_db import WorkList_db_class
+
+from WorkList_db import WorkList_db_class
+
 
 class Ui_MainWindow(QtWidgets.QDialog):
     plate_type = "Plate"
@@ -1068,7 +1072,11 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
                 cnt += 1
 
+
          # 텍스트파일의 라인수보다 샘플카운트가 크거나 같다면 임시바코드리스트에 라인수만큼 넣어줌.
+
+			# 텍스트파일의 라인수보다 샘플카운트가 크거나 같다면 임시바코드리스트에 라인수만큼 넣어줌.
+
             if len(lines) <= int(self.lineEdit_smp_count.text()):
                 for i in range(len(lines)):
                     self.temp_bcd_list.append((self.tableWidget_smp.item(i, 0)).text())

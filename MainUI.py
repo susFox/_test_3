@@ -9,3 +9,5 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.setGeometry(0, 0, 1920, 1080)
         self.setWindowOpacity(0.7)
+        self.setWindowOpacity(0.7)
+        print("git Test_chhwang")
