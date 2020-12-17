@@ -19,10 +19,10 @@ import sqlite3
 import ctypes
 import subprocess
 import time
-# import DB
 import MainUI
 import SubUI
 from WorkList_db import WorkList_db_class
+
 
 class Singleton(type):  # Type을 상속받음
     __instances = {}  # 클래스의 인스턴스를 저장할 속성
@@ -33,25 +33,25 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
-        print("test 중입니다.4ㄷㄷㅇㄷ")
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
+
 
 try:
     from watchdog.observers import Observer
 
-    from watchdog.events import FileSystemEventHandlerㄷ
+    from watchdog.events import FileSystemEventHandler
 
 except ModuleNotFoundError as e:
     print(e)
     os.system("pip install watchdog")
-        
-        
+
+
 class Handler(FileSystemEventHandler):
     def on_created(self, event):  # 파일 생성시
         # Ui_MainWindow.temp_src = "A" #
         temp = event.src_path
-        temp = temp.replace('\\', '/')
-        
+        temp = temp.replace('\\', '/')  # 경로는 \\가 아닌 /로 치환
+
         DB.Inst_bcd_path(event.src_path)
 
         if event.is_directory:
@@ -71,14 +71,17 @@ class Handler(FileSystemEventHandler):
              3. lnk 파일
 
             '''
-			#Extraction명이 들어간 경우는 화면 안나타게끔 예외처리
+            # Extraction명이 들어간 경우는 화면 안나타게끔 예외처리
             temp = temp.find("Extraction")
 
-            if Extension == '.txt':
-                if temp == -1:
+            if Extension == '.txt':  # txt 파일만 추출
+                if temp == -1:  # Extraction이 들어가지 않은 경우에만  화면 띄워주는 시그널을 1로 줌
                     Watcher.temp = 1
+                    import shutil  # 파일을 다른곳에 백업 시켜둠.
+                    shutil.copy(event.src_path, "C:\\Barcode\\")  ########## 경
 
-            elif Extension == '.exe': #############
+
+            elif Extension == '.exe':
 
                 print(".exe 실행 파일 입니다.")
 
@@ -92,14 +95,12 @@ class Handler(FileSystemEventHandler):
 
         print("업데이트 이벤트 발생")
 
+
 class Watcher(metaclass=Singleton):
     # 생성자
     temp = 0
 
     def __init__(self, path):
-
-        print("감시 중 ...")
-
         self.event_handler = None  # Handler
 
         self.observer = Observer()  # Observer 객체 생성
@@ -113,16 +114,11 @@ class Watcher(metaclass=Singleton):
     # func (1) 현재 작업 디렉토리
 
     def currentDirectorySetting(self):
-
-        print("====================================")
-
         print("현재 작업 디렉토리:  ", end=" ")
 
         os.chdir(self.target_directory)
 
         print("{cwd}".format(cwd=os.getcwd()))
-
-        print("====================================")
 
     # func (2)
 
@@ -137,7 +133,6 @@ class Watcher(metaclass=Singleton):
 
         )
         self.observer.start()  # 감시 시작
-    
         try:
 
             while True:  # 무한 루프
@@ -152,22 +147,25 @@ class Watcher(metaclass=Singleton):
             print("Error")
             self.observer.join()
 
+    # 화면 불러오는 기능
     def Main(self):
+        dialog_main = MainUI.Ui_MainWindow()  # 배경화면 화면 객체생성
+        dialog_sub = SubUI.Ui_MainWindow()  # 바코드 비교화면 객체생성
+        dialog_main.showFullScreen()  # 배경화면은 전체화면으로 띄워줌
+        dialog_sub.exec_()  # 바코드 비교화면 실행
+        dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)  # 비교화면을 가장 최상단으로 만들어줌.
+        Watcher.temp = 0  # 화면 띄워주는 시그널 0으로 만들어 안뜨도록함.
 
-        dialog_main = MainUI.Ui_MainWindow()
-        dialog_sub = SubUI.Ui_MainWindow()
-        dialog_main.showFullScreen()
-        dialog_sub.exec_()
-        dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        Watcher.temp = 0
 
 if __name__ == "__main__":
     DB = WorkList_db_class()
     temp = 0
 
-    os.startfile(r"C:\Users\USER\Desktop\업무\PerkinElmer\SYM-BIO\PreNAT II\PreNATII.exe") ########################## 경로 수정
+    PE_path = DB.show_PE_path()
+    PE_path = PE_path[0][0]
+    os.startfile(PE_path)
     import psutil  # 실행중인 프로세스 및 시스템 활용 라이브러리
-    
+
     for proc in psutil.process_iter():
         try:
             # 프로세스 이름, PID값 가져오기
@@ -178,7 +176,7 @@ if __name__ == "__main__":
                 temp += 1
                 parent_pid = processID  # PID
                 parent = psutil.Process(parent_pid)  # PID 찾기
-                if temp > 2: 
+                if temp > 2:
                     for child in parent.children(recursive=True):  # 자식-부모 종료
                         child.kill()
                     parent.kill()
@@ -188,15 +186,16 @@ if __name__ == "__main__":
 
     import sys
     import os
+
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()  
+    MainWindow = QtWidgets.QMainWindow()
     path1 = ""
     path1 = DB.show_path()
     path1 = path1[0][0]
     myWatcher = Watcher(path1)
     myWatcher.run()
 
-    while True:
+    while True:  # 무한 루프를 통해 파일이 생성될때 화면 시그널이 1로 되며, 1이되면 화면을 띄워주는 함수로 간다.
         time.sleep(1)  # 1초 마다 대상 디렉토리 감시
         if myWatcher.temp == 1:
             myWatcher.Main()
