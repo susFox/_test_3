@@ -19,6 +19,9 @@ import sqlite3
 import ctypes
 import subprocess
 import time
+import Monitering.MainUI
+import Monitering.SubUI
+from Monitering.WorkList_db import WorkList_db_class
 
 
 class Singleton(type):  # Type을 상속받음
@@ -30,14 +33,13 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
-
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
 
 
 try:
     from watchdog.observers import Observer
 
-    from watchdog.events import FileSystemEventHandlerㄷ
+    from watchdog.events import FileSystemEventHandler
 
 except ModuleNotFoundError as e:
     print(e)
@@ -48,7 +50,7 @@ class Handler(FileSystemEventHandler):
     def on_created(self, event):  # 파일 생성시
         # Ui_MainWindow.temp_src = "A" #
         temp = event.src_path
-        temp = temp.replace('\\', '/')
+        temp = temp.replace('\\', '/')  # 경로는 \\가 아닌 /로 치환
 
         DB.Inst_bcd_path(event.src_path)
 
@@ -72,10 +74,12 @@ class Handler(FileSystemEventHandler):
             # Extraction명이 들어간 경우는 화면 안나타게끔 예외처리
             temp = temp.find("Extraction")
 
-            if Extension == '.txt':
-                if temp == -1:
+            if Extension == '.txt':  # txt 파일만 추출
+                if temp == -1:  # Extraction이 들어가지 않은 경우에만  화면 띄워주는 시그널을 1로 줌
                     Watcher.temp = 1
-                    import shutil
+                    import shutil  # 파일을 다른곳에 백업 시켜둠.
+                    shutil.copy(event.src_path, "C:\shinhoo\Monitering\Temp\\")  ########## 경
+
 
             elif Extension == '.exe':
 
@@ -97,9 +101,6 @@ class Watcher(metaclass=Singleton):
     temp = 0
 
     def __init__(self, path):
-
-        print("감시 중 ...")
-
         self.event_handler = None  # Handler
 
         self.observer = Observer()  # Observer 객체 생성
@@ -113,16 +114,11 @@ class Watcher(metaclass=Singleton):
     # func (1) 현재 작업 디렉토리
 
     def currentDirectorySetting(self):
-
-        print("====================================")
-
         print("현재 작업 디렉토리:  ", end=" ")
 
         os.chdir(self.target_directory)
 
         print("{cwd}".format(cwd=os.getcwd()))
-
-        print("====================================")
 
     # func (2)
 
@@ -137,7 +133,6 @@ class Watcher(metaclass=Singleton):
 
         )
         self.observer.start()  # 감시 시작
-
         try:
 
             while True:  # 무한 루프
@@ -152,14 +147,14 @@ class Watcher(metaclass=Singleton):
             print("Error")
             self.observer.join()
 
+    # 화면 불러오는 기능
     def Main(self):
-
-        dialog_main = Monitering.MainUI.Ui_MainWindow()
-        dialog_sub = Monitering.SubUI.Ui_MainWindow()
-        dialog_main.showFullScreen()
-        dialog_sub.exec_()
-        dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-        Watcher.temp = 0
+        dialog_main = Monitering.MainUI.Ui_MainWindow()  # 배경화면 화면 객체생성
+        dialog_sub = Monitering.SubUI.Ui_MainWindow()  # 바코드 비교화면 객체생성
+        dialog_main.showFullScreen()  # 배경화면은 전체화면으로 띄워줌
+        dialog_sub.exec_()  # 바코드 비교화면 실행
+        dialog_sub.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)  # 비교화면을 가장 최상단으로 만들어줌.
+        Watcher.temp = 0  # 화면 띄워주는 시그널 0으로 만들어 안뜨도록함.
 
 
 if __name__ == "__main__":
@@ -200,7 +195,7 @@ if __name__ == "__main__":
     myWatcher = Watcher(path1)
     myWatcher.run()
 
-    while True:
+    while True:  # 무한 루프를 통해 파일이 생성될때 화면 시그널이 1로 되며, 1이되면 화면을 띄워주는 함수로 간다.
         time.sleep(1)  # 1초 마다 대상 디렉토리 감시
         if myWatcher.temp == 1:
             myWatcher.Main()
