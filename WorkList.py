@@ -28,7 +28,7 @@ import SubUI
 from WorkList_db import WorkList_db_class
 
 
-
+#차이점 만들기
 class Singleton(type):  # Type을 상속받음
     __instances = {}  # 클래스의 인스턴스를 저장할 속성
 
@@ -38,6 +38,7 @@ class Singleton(type):  # Type을 상속받음
             # print("인스턴스 생성 확인")
         # print("인스턴스 활용중 ~")
         # print(cls)
+        print(3)
         return cls.__instances[cls]  # 클래스로 인스턴스를 생성했으면 인스턴스 반환
 
 
